@@ -14,7 +14,7 @@
 ````xml
 LoadPlugin python
 <Plugin python>
-    ModulePath "/home/anthony/Devs/collectd-lxc"
+    ModulePath "/etc/collectd/plugins/"
     LogTraces true
     Interactive false
     Import "collectd_lxc"
