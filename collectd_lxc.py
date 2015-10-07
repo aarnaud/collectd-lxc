@@ -32,6 +32,7 @@ def reader(input_data=None):
         if not metrics[user_id].has_key(container_name):
             metrics[user_id][container_name] = dict()
         metrics[user_id][container_name][stat_type] = cgroup_lxc_metrics
+        #PID lxc: cat /sys/fs/cgroup/cpuacct/lxc/eni-server-ad/cgroup.procs | head -n 1
 
     # foreach user
     for user_id in metrics:
@@ -119,6 +120,58 @@ def reader(input_data=None):
                     CPU_system.dispatch()
 
                 ### End CPU
+
+                ### DISK
+                if metric == "blkio":
+                    with open(os.path.join(metrics[user_id][container_name][metric], 'blkio.throttle.io_service_bytes'), 'r') as f:
+                        lines = f.read()
+
+                    bytes_read = int(re.search("Read\s+(?P<read>[0-9]+)", lines).group("read"))
+                    bytes_write = int(re.search("Write\s+(?P<write>[0-9]+)", lines).group("write"))
+
+                    blkio_bytes_read = collectd.Values()
+                    blkio_bytes_read.plugin = "lxc_blkio"
+                    blkio_bytes_read.plugin_instance = lxc_fullname
+                    blkio_bytes_read.type_instance = "bytes_read"
+                    blkio_bytes_read.type = 'gauge'
+                    blkio_bytes_read.values = [bytes_read]
+                    blkio_bytes_read.host = str(socket.gethostname())
+                    blkio_bytes_read.dispatch()
+
+                    blkio_bytes_write = collectd.Values()
+                    blkio_bytes_write.plugin = "lxc_blkio"
+                    blkio_bytes_write.plugin_instance = lxc_fullname
+                    blkio_bytes_write.type_instance = "bytes_write"
+                    blkio_bytes_write.type = 'gauge'
+                    blkio_bytes_write.values = [bytes_write]
+                    blkio_bytes_write.host = str(socket.gethostname())
+                    blkio_bytes_write.dispatch()
+
+                    with open(os.path.join(metrics[user_id][container_name][metric], 'blkio.throttle.io_serviced'), 'r') as f:
+                        lines = f.read()
+
+                    ops_read = int(re.search("Read\s+(?P<read>[0-9]+)", lines).group("read"))
+                    ops_write = int(re.search("Write\s+(?P<write>[0-9]+)", lines).group("write"))
+
+                    blkio_io_read = collectd.Values()
+                    blkio_io_read.plugin = "lxc_blkio"
+                    blkio_io_read.plugin_instance = lxc_fullname
+                    blkio_io_read.type_instance = "ops_read"
+                    blkio_io_read.type = 'gauge'
+                    blkio_io_read.values = [ops_read]
+                    blkio_io_read.host = str(socket.gethostname())
+                    blkio_io_read.dispatch()
+
+                    blkio_io_write = collectd.Values()
+                    blkio_io_write.plugin = "lxc_blkio"
+                    blkio_io_write.plugin_instance = lxc_fullname
+                    blkio_io_write.type_instance = "ops_write"
+                    blkio_io_write.type = 'gauge'
+                    blkio_io_write.values = [ops_write]
+                    blkio_io_write.host = str(socket.gethostname())
+                    blkio_io_write.dispatch()
+
+                ### End DISK
 
 collectd.register_config(configer)
 collectd.register_init(initer)
