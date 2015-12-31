@@ -15,7 +15,7 @@ def reader(input_data=None):
 
     #Get all stats by container group by user
     for cgroup_lxc_metrics in cgroup_lxc:
-        m = re.search("/sys/fs/cgroup/(?P<type>[a-zA-Z_]+)/(?:user/(?P<user_id>[0-9]+)\.user/[a-zA-Z0-9]+\.session/)?lxc/(?P<container_name>.*)/", cgroup_lxc_metrics)
+        m = re.search("/sys/fs/cgroup/(?P<type>[a-zA-Z_,]+)/(?:user/(?P<user_id>[0-9]+)\.user/[a-zA-Z0-9]+\.session/)?lxc/(?P<container_name>.*)/", cgroup_lxc_metrics)
         user_id = int(m.group("user_id") or 0)
         stat_type = m.group("type")
         container_name = m.group("container_name")
