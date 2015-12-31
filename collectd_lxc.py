@@ -3,15 +3,7 @@
 import glob
 import os
 import re
-import collectd
-import socket
 
-
-def configer(ObjConfiguration):
-   collectd.debug('Configuring lxc collectd')
-
-def initer():
-    collectd.debug('initing lxc collectd')
 
 def reader(input_data=None):
     root_lxc_cgroup = glob.glob("/sys/fs/cgroup/*/lxc/*/")
@@ -23,13 +15,13 @@ def reader(input_data=None):
 
     #Get all stats by container group by user
     for cgroup_lxc_metrics in cgroup_lxc:
-        m = re.search("/sys/fs/cgroup/(?P<type>[a-zA-Z_]+)/(?:user/(?P<user_id>[0-9]+)\.user/[a-zA-Z0-9]+\.session/)?lxc/(?P<container_name>.*)/", cgroup_lxc_metrics)
+        m = re.search("/sys/fs/cgroup/(?P<type>[a-zA-Z_,]+)/(?:user/(?P<user_id>[0-9]+)\.user/[a-zA-Z0-9]+\.session/)?lxc/(?P<container_name>.*)/", cgroup_lxc_metrics)
         user_id = int(m.group("user_id") or 0)
         stat_type = m.group("type")
         container_name = m.group("container_name")
-        if not metrics.has_key(user_id):
+        if user_id not in metrics:
             metrics[user_id] = dict()
-        if not metrics[user_id].has_key(container_name):
+        if container_name not in metrics[user_id]:
             metrics[user_id][container_name] = dict()
         metrics[user_id][container_name][stat_type] = cgroup_lxc_metrics
         #PID lxc: cat /sys/fs/cgroup/cpuacct/lxc/eni-server-ad/cgroup.procs | head -n 1
@@ -52,38 +44,18 @@ def reader(input_data=None):
                     for line in lines:
                         data = line.split()
                         if data[0] == "total_rss":
-                                mem_rss = int(data[1])
+                            mem_rss = int(data[1])
                         elif data[0] == "total_cache":
-                                mem_cache = int(data[1])
+                            mem_cache = int(data[1])
                         elif data[0] == "total_swap":
-                                mem_swap = int(data[1])
+                            mem_swap = int(data[1])
 
-                    memory_rss = collectd.Values()
-                    memory_rss.plugin = "lxc_memory"
-                    memory_rss.plugin_instance = lxc_fullname
-                    memory_rss.type_instance = "rss"
-                    memory_rss.type = 'gauge'
-                    memory_rss.values = [mem_rss]
-                    memory_rss.host = str(socket.gethostname())
-                    memory_rss.dispatch()
+                    values = collectd.Values(plugin_instance=lxc_fullname,
+                                             type="gauge", plugin="lxc_memory")
+                    values.dispatch(type_instance="rss", values=[mem_rss])
+                    values.dispatch(type_instance="cache", values=[mem_cache])
+                    values.dispatch(type_instance="swap", values=[mem_swap])
 
-                    memory_cache = collectd.Values()
-                    memory_cache.plugin = "lxc_memory"
-                    memory_cache.plugin_instance = lxc_fullname
-                    memory_cache.type_instance = "cache"
-                    memory_cache.type = 'gauge'
-                    memory_cache.values = [mem_cache]
-                    memory_cache.host = str(socket.gethostname())
-                    memory_cache.dispatch()
-
-                    memory_swap = collectd.Values()
-                    memory_swap.plugin = "lxc_memory"
-                    memory_swap.plugin_instance = lxc_fullname
-                    memory_swap.type_instance = "swap"
-                    memory_swap.type = 'gauge'
-                    memory_swap.values = [mem_swap]
-                    memory_swap.host = str(socket.gethostname())
-                    memory_swap.dispatch()
                 ### End Memory
 
                 ### CPU
@@ -97,55 +69,25 @@ def reader(input_data=None):
                     for line in lines:
                         data = line.split()
                         if data[0] == "user":
-                                cpu_user = int(data[1])
+                            cpu_user = int(data[1])
                         elif data[0] == "system":
-                                cpu_system = int(data[1])
+                            cpu_system = int(data[1])
 
-                    CPU_user = collectd.Values()
-                    CPU_user.plugin = "lxc_cpu"
-                    CPU_user.plugin_instance = lxc_fullname
-                    CPU_user.type_instance = "user"
-                    CPU_user.type = 'gauge'
-                    CPU_user.values = [cpu_user]
-                    CPU_user.host = str(socket.gethostname())
-                    CPU_user.dispatch()
-
-                    CPU_system = collectd.Values()
-                    CPU_system.plugin = "lxc_cpu"
-                    CPU_system.plugin_instance = lxc_fullname
-                    CPU_system.type_instance = "system"
-                    CPU_system.type = 'gauge'
-                    CPU_system.values = [cpu_system]
-                    CPU_system.host = str(socket.gethostname())
-                    CPU_system.dispatch()
+                    values = collectd.Values(plugin_instance=lxc_fullname,
+                                             type="gauge", plugin="lxc_cpu")
+                    values.dispatch(type_instance="user", values=[cpu_user])
+                    values.dispatch(type_instance="system", values=[cpu_system])
 
                 ### End CPU
 
                 ### DISK
                 if metric == "blkio":
+
                     with open(os.path.join(metrics[user_id][container_name][metric], 'blkio.throttle.io_service_bytes'), 'r') as f:
                         lines = f.read()
 
                     bytes_read = int(re.search("Read\s+(?P<read>[0-9]+)", lines).group("read"))
                     bytes_write = int(re.search("Write\s+(?P<write>[0-9]+)", lines).group("write"))
-
-                    blkio_bytes_read = collectd.Values()
-                    blkio_bytes_read.plugin = "lxc_blkio"
-                    blkio_bytes_read.plugin_instance = lxc_fullname
-                    blkio_bytes_read.type_instance = "bytes_read"
-                    blkio_bytes_read.type = 'gauge'
-                    blkio_bytes_read.values = [bytes_read]
-                    blkio_bytes_read.host = str(socket.gethostname())
-                    blkio_bytes_read.dispatch()
-
-                    blkio_bytes_write = collectd.Values()
-                    blkio_bytes_write.plugin = "lxc_blkio"
-                    blkio_bytes_write.plugin_instance = lxc_fullname
-                    blkio_bytes_write.type_instance = "bytes_write"
-                    blkio_bytes_write.type = 'gauge'
-                    blkio_bytes_write.values = [bytes_write]
-                    blkio_bytes_write.host = str(socket.gethostname())
-                    blkio_bytes_write.dispatch()
 
                     with open(os.path.join(metrics[user_id][container_name][metric], 'blkio.throttle.io_serviced'), 'r') as f:
                         lines = f.read()
@@ -153,26 +95,33 @@ def reader(input_data=None):
                     ops_read = int(re.search("Read\s+(?P<read>[0-9]+)", lines).group("read"))
                     ops_write = int(re.search("Write\s+(?P<write>[0-9]+)", lines).group("write"))
 
-                    blkio_io_read = collectd.Values()
-                    blkio_io_read.plugin = "lxc_blkio"
-                    blkio_io_read.plugin_instance = lxc_fullname
-                    blkio_io_read.type_instance = "ops_read"
-                    blkio_io_read.type = 'gauge'
-                    blkio_io_read.values = [ops_read]
-                    blkio_io_read.host = str(socket.gethostname())
-                    blkio_io_read.dispatch()
-
-                    blkio_io_write = collectd.Values()
-                    blkio_io_write.plugin = "lxc_blkio"
-                    blkio_io_write.plugin_instance = lxc_fullname
-                    blkio_io_write.type_instance = "ops_write"
-                    blkio_io_write.type = 'gauge'
-                    blkio_io_write.values = [ops_write]
-                    blkio_io_write.host = str(socket.gethostname())
-                    blkio_io_write.dispatch()
+                    values = collectd.Values(plugin_instance=lxc_fullname,
+                                             type="gauge", plugin="lxc_blkio")
+                    values.dispatch(type_instance="bytes_read", values=[bytes_read])
+                    values.dispatch(type_instance="bytes_write", values=[bytes_write])
+                    values.dispatch(type_instance="ops_read", values=[ops_read])
+                    values.dispatch(type_instance="ops_write", values=[ops_write])
 
                 ### End DISK
 
-collectd.register_config(configer)
-collectd.register_init(initer)
-collectd.register_read(reader)
+
+if __name__ == '__main__':
+    # Mimic Collectd Values object
+    class Values(object):
+        def __init__(self, **kwargs):
+            self.__dict__["_values"] = kwargs
+        def __setattr__(self, key, value):
+            self.__dict__["_values"][key] = value
+        def dispatch(self, **kwargs):
+            values = self._values.copy()
+            values.update(kwargs)
+            print(values)
+
+    import types
+    collectd = types.ModuleType("collectd")
+    collectd.Values = Values
+
+    reader()
+else:
+    import collectd
+    collectd.register_read(reader)
