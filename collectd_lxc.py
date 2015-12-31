@@ -7,12 +7,6 @@ import collectd
 import socket
 
 
-def configer(ObjConfiguration):
-   collectd.debug('Configuring lxc collectd')
-
-def initer():
-    collectd.debug('initing lxc collectd')
-
 def reader(input_data=None):
     root_lxc_cgroup = glob.glob("/sys/fs/cgroup/*/lxc/*/")
     unprivilege_lxc_cgroup = glob.glob("/sys/fs/cgroup/*/*/*/*/lxc/*/")
@@ -173,6 +167,4 @@ def reader(input_data=None):
 
                 ### End DISK
 
-collectd.register_config(configer)
-collectd.register_init(initer)
 collectd.register_read(reader)
