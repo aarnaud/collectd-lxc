@@ -19,9 +19,9 @@ def reader(input_data=None):
         user_id = int(m.group("user_id") or 0)
         stat_type = m.group("type")
         container_name = m.group("container_name")
-        if not metrics.has_key(user_id):
+        if user_id not in metrics:
             metrics[user_id] = dict()
-        if not metrics[user_id].has_key(container_name):
+        if container_name not in metrics[user_id]:
             metrics[user_id][container_name] = dict()
         metrics[user_id][container_name][stat_type] = cgroup_lxc_metrics
         #PID lxc: cat /sys/fs/cgroup/cpuacct/lxc/eni-server-ad/cgroup.procs | head -n 1
@@ -44,11 +44,11 @@ def reader(input_data=None):
                     for line in lines:
                         data = line.split()
                         if data[0] == "total_rss":
-                                mem_rss = int(data[1])
+                            mem_rss = int(data[1])
                         elif data[0] == "total_cache":
-                                mem_cache = int(data[1])
+                            mem_cache = int(data[1])
                         elif data[0] == "total_swap":
-                                mem_swap = int(data[1])
+                            mem_swap = int(data[1])
 
                     values = collectd.Values(plugin_instance=lxc_fullname,
                                              type="gauge", plugin="lxc_memory")
@@ -69,9 +69,9 @@ def reader(input_data=None):
                     for line in lines:
                         data = line.split()
                         if data[0] == "user":
-                                cpu_user = int(data[1])
+                            cpu_user = int(data[1])
                         elif data[0] == "system":
-                                cpu_system = int(data[1])
+                            cpu_system = int(data[1])
 
                     values = collectd.Values(plugin_instance=lxc_fullname,
                                              type="gauge", plugin="lxc_cpu")
