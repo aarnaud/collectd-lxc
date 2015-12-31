@@ -27,6 +27,8 @@ def reader(input_data=None):
         metrics[user_id][container_name][stat_type] = cgroup_lxc_metrics
         #PID lxc: cat /sys/fs/cgroup/cpuacct/lxc/eni-server-ad/cgroup.procs | head -n 1
 
+    hostname = str(socket.gethostname())
+
     # foreach user
     for user_id in metrics:
         # foreach container
@@ -57,7 +59,7 @@ def reader(input_data=None):
                     memory_rss.type_instance = "rss"
                     memory_rss.type = 'gauge'
                     memory_rss.values = [mem_rss]
-                    memory_rss.host = str(socket.gethostname())
+                    memory_rss.host = hostname
                     memory_rss.dispatch()
 
                     memory_cache = collectd.Values()
@@ -66,7 +68,7 @@ def reader(input_data=None):
                     memory_cache.type_instance = "cache"
                     memory_cache.type = 'gauge'
                     memory_cache.values = [mem_cache]
-                    memory_cache.host = str(socket.gethostname())
+                    memory_cache.host = hostname
                     memory_cache.dispatch()
 
                     memory_swap = collectd.Values()
@@ -75,7 +77,7 @@ def reader(input_data=None):
                     memory_swap.type_instance = "swap"
                     memory_swap.type = 'gauge'
                     memory_swap.values = [mem_swap]
-                    memory_swap.host = str(socket.gethostname())
+                    memory_swap.host = hostname
                     memory_swap.dispatch()
                 ### End Memory
 
@@ -100,7 +102,7 @@ def reader(input_data=None):
                     CPU_user.type_instance = "user"
                     CPU_user.type = 'gauge'
                     CPU_user.values = [cpu_user]
-                    CPU_user.host = str(socket.gethostname())
+                    CPU_user.host = hostname
                     CPU_user.dispatch()
 
                     CPU_system = collectd.Values()
@@ -109,7 +111,7 @@ def reader(input_data=None):
                     CPU_system.type_instance = "system"
                     CPU_system.type = 'gauge'
                     CPU_system.values = [cpu_system]
-                    CPU_system.host = str(socket.gethostname())
+                    CPU_system.host = hostname
                     CPU_system.dispatch()
 
                 ### End CPU
@@ -128,7 +130,7 @@ def reader(input_data=None):
                     blkio_bytes_read.type_instance = "bytes_read"
                     blkio_bytes_read.type = 'gauge'
                     blkio_bytes_read.values = [bytes_read]
-                    blkio_bytes_read.host = str(socket.gethostname())
+                    blkio_bytes_read.host = hostname
                     blkio_bytes_read.dispatch()
 
                     blkio_bytes_write = collectd.Values()
@@ -137,7 +139,7 @@ def reader(input_data=None):
                     blkio_bytes_write.type_instance = "bytes_write"
                     blkio_bytes_write.type = 'gauge'
                     blkio_bytes_write.values = [bytes_write]
-                    blkio_bytes_write.host = str(socket.gethostname())
+                    blkio_bytes_write.host = hostname
                     blkio_bytes_write.dispatch()
 
                     with open(os.path.join(metrics[user_id][container_name][metric], 'blkio.throttle.io_serviced'), 'r') as f:
@@ -152,7 +154,7 @@ def reader(input_data=None):
                     blkio_io_read.type_instance = "ops_read"
                     blkio_io_read.type = 'gauge'
                     blkio_io_read.values = [ops_read]
-                    blkio_io_read.host = str(socket.gethostname())
+                    blkio_io_read.host = hostname
                     blkio_io_read.dispatch()
 
                     blkio_io_write = collectd.Values()
@@ -161,7 +163,7 @@ def reader(input_data=None):
                     blkio_io_write.type_instance = "ops_write"
                     blkio_io_write.type = 'gauge'
                     blkio_io_write.values = [ops_write]
-                    blkio_io_write.host = str(socket.gethostname())
+                    blkio_io_write.host = hostname
                     blkio_io_write.dispatch()
 
                 ### End DISK
