@@ -3,7 +3,6 @@
 import glob
 import os
 import re
-import collectd
 import socket
 
 
@@ -167,4 +166,22 @@ def reader(input_data=None):
 
                 ### End DISK
 
-collectd.register_read(reader)
+
+if __name__ == '__main__':
+    # Mimic Collectd Values object
+    class Values(object):
+        def __init__(self):
+            self.__dict__["_values"] = {}
+        def __setattr__(self, key, value):
+            self.__dict__["_values"][key] = value
+        def dispatch(self):
+            print(self._values)
+
+    import types
+    collectd = types.ModuleType("collectd")
+    collectd.Values = Values
+
+    reader()
+else:
+    import collectd
+    collectd.register_read(reader)
