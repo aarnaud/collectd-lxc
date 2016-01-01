@@ -4,6 +4,11 @@ import glob
 import os
 import re
 
+def configer(ObjConfiguration):
+   collectd.debug('Configuring lxc collectd')
+
+def initer():
+    collectd.debug('initing lxc collectd')
 
 def reader(input_data=None):
     root_lxc_cgroup = glob.glob("/sys/fs/cgroup/*/lxc/*/")
@@ -124,4 +129,6 @@ if __name__ == '__main__':
     reader()
 else:
     import collectd
+    collectd.register_config(configer)
+    collectd.register_init(initer)
     collectd.register_read(reader)
