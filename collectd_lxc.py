@@ -3,6 +3,7 @@
 import glob
 import os
 import re
+import subprocess
 from nsenter import Namespace
 
 def configer(ObjConfiguration):
@@ -114,22 +115,34 @@ def reader(input_data=None):
                     with open(os.path.join(metrics[user_id][container_name][metric], 'tasks'), 'r') as f:
                         # The first line is PID of container
                         container_PID = f.readline().rstrip()
-                        with Namespace(container_PID, 'mnt'):
-                            sys_class_net='/sys/class/net/'
-                            for interface in os.listdir(sys_class_net):
-                                net_statistics_dir=os.path.join(sys_class_net,interface,'statistics')
-                                with open(os.path.join(net_statistics_dir, 'tx_bytes')) as f:
-                                    print(f.readline().rstrip())
-                                with open(os.path.join(net_statistics_dir, 'rx_bytes')) as f:
-                                    print(f.readline().rstrip())
-                                with open(os.path.join(net_statistics_dir, 'tx_packets')) as f:
-                                    print(f.readline().rstrip())
-                                with open(os.path.join(net_statistics_dir, 'rx_packets')) as f:
-                                    print(f.readline().rstrip())
-                                with open(os.path.join(net_statistics_dir, 'tx_errors')) as f:
-                                    print(f.readline().rstrip())
-                                with open(os.path.join(net_statistics_dir, 'rx_errors')) as f:
-                                    print(f.readline().rstrip())
+                        with Namespace(container_PID, 'net'):
+                            with open('/proc/net/dev', 'r') as f:
+                                network_data=f.readlines()
+                                # HEAD OF /proc/net/dev :
+                                # Inter-|Receive                                                |Transmit
+                                # face  |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
+                                for line in network_data[2:]:
+                                    interface = line.strip().split(':')[0]
+                                    rx_data = line.strip().split(':')[1].split()[0:7]
+                                    tx_data = line.strip().split(':')[1].split()[8:15]
+
+                                    rx_bytes = int(rx_data[0])
+                                    tx_bytes = int(tx_data[0])
+
+                                    rx_packets = int(rx_data[1])
+                                    tx_packets = int(tx_data[1])
+
+                                    rx_errors = int(rx_data[2])
+                                    tx_errors = int(tx_data[2])
+
+                                    values = collectd.Values(plugin_instance=lxc_fullname,
+                                                             type="gauge", plugin="lxc_net")
+                                    values.dispatch(type_instance="tx_bytes_{0}".format(interface), values=[tx_bytes])
+                                    values.dispatch(type_instance="rx_bytes_{0}".format(interface), values=[rx_bytes])
+                                    values.dispatch(type_instance="tx_packets_{0}".format(interface), values=[tx_packets])
+                                    values.dispatch(type_instance="rx_packets_{0}".format(interface), values=[rx_packets])
+                                    values.dispatch(type_instance="tx_errors_{0}".format(interface), values=[tx_errors])
+                                    values.dispatch(type_instance="rx_errors_{0}".format(interface), values=[rx_errors])
                 ### End Network
 
 
