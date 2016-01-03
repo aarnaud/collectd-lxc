@@ -3,6 +3,7 @@
 import glob
 import os
 import re
+from nsenter import Namespace
 
 def configer(ObjConfiguration):
    collectd.debug('Configuring lxc collectd')
@@ -29,7 +30,6 @@ def reader(input_data=None):
         if container_name not in metrics[user_id]:
             metrics[user_id][container_name] = dict()
         metrics[user_id][container_name][stat_type] = cgroup_lxc_metrics
-        #PID lxc: cat /sys/fs/cgroup/cpuacct/lxc/eni-server-ad/cgroup.procs | head -n 1
 
     # foreach user
     for user_id in metrics:
@@ -108,6 +108,29 @@ def reader(input_data=None):
                     values.dispatch(type_instance="ops_write", values=[ops_write])
 
                 ### End DISK
+
+                ### Network
+                    #PID lxc: cat /sys/fs/cgroup/devices/lxc/CONTAINER-NAME/tasks | head -n 1
+                    with open(os.path.join(metrics[user_id][container_name][metric], 'tasks'), 'r') as f:
+                        # The first line is PID of container
+                        container_PID = f.readline().rstrip()
+                        with Namespace(container_PID, 'mnt'):
+                            sys_class_net='/sys/class/net/'
+                            for interface in os.listdir(sys_class_net):
+                                net_statistics_dir=os.path.join(sys_class_net,interface,'statistics')
+                                with open(os.path.join(net_statistics_dir, 'tx_bytes')) as f:
+                                    print(f.readline().rstrip())
+                                with open(os.path.join(net_statistics_dir, 'rx_bytes')) as f:
+                                    print(f.readline().rstrip())
+                                with open(os.path.join(net_statistics_dir, 'tx_packets')) as f:
+                                    print(f.readline().rstrip())
+                                with open(os.path.join(net_statistics_dir, 'rx_packets')) as f:
+                                    print(f.readline().rstrip())
+                                with open(os.path.join(net_statistics_dir, 'tx_errors')) as f:
+                                    print(f.readline().rstrip())
+                                with open(os.path.join(net_statistics_dir, 'rx_errors')) as f:
+                                    print(f.readline().rstrip())
+                ### End Network
 
 
 if __name__ == '__main__':
