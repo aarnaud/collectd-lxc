@@ -5,6 +5,7 @@
 * privileged and unprivileged container
 * cpu metric
 * memory metric
+* network metric
 
 ## Installation
 
