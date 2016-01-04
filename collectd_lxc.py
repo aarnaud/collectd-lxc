@@ -7,10 +7,10 @@ import subprocess
 from nsenter import Namespace
 
 def configer(ObjConfiguration):
-   collectd.debug('Configuring lxc collectd')
+    collectd.info('Configuring lxc collectd')
 
 def initer():
-    collectd.debug('initing lxc collectd')
+    collectd.info('initing lxc collectd')
 
 def reader(input_data=None):
     root_lxc_cgroup = glob.glob("/sys/fs/cgroup/*/lxc/*/")
@@ -116,33 +116,35 @@ def reader(input_data=None):
                         # The first line is PID of container
                         container_PID = f.readline().rstrip()
                         with Namespace(container_PID, 'net'):
-                            with open('/proc/net/dev', 'r') as f:
-                                network_data=f.readlines()
-                                # HEAD OF /proc/net/dev :
-                                # Inter-|Receive                                                |Transmit
-                                # face  |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
-                                for line in network_data[2:]:
-                                    interface = line.strip().split(':')[0]
-                                    rx_data = line.strip().split(':')[1].split()[0:7]
-                                    tx_data = line.strip().split(':')[1].split()[8:15]
+                            # To read network metric in namespace, "open" method don't work with namespace
+                            network_data = subprocess.check_output(['cat', '/proc/net/dev']).split("\n")
+                            # HEAD OF /proc/net/dev :
+                            # Inter-|Receive                                                |Transmit
+                            # face  |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
+                            for line in network_data[2:]:
+                                if line.strip() == "":
+                                    continue
+                                interface = line.strip().split(':')[0]
+                                rx_data = line.strip().split(':')[1].split()[0:7]
+                                tx_data = line.strip().split(':')[1].split()[8:15]
 
-                                    rx_bytes = int(rx_data[0])
-                                    tx_bytes = int(tx_data[0])
+                                rx_bytes = int(rx_data[0])
+                                tx_bytes = int(tx_data[0])
 
-                                    rx_packets = int(rx_data[1])
-                                    tx_packets = int(tx_data[1])
+                                rx_packets = int(rx_data[1])
+                                tx_packets = int(tx_data[1])
 
-                                    rx_errors = int(rx_data[2])
-                                    tx_errors = int(tx_data[2])
+                                rx_errors = int(rx_data[2])
+                                tx_errors = int(tx_data[2])
 
-                                    values = collectd.Values(plugin_instance=lxc_fullname,
-                                                             type="gauge", plugin="lxc_net")
-                                    values.dispatch(type_instance="tx_bytes_{0}".format(interface), values=[tx_bytes])
-                                    values.dispatch(type_instance="rx_bytes_{0}".format(interface), values=[rx_bytes])
-                                    values.dispatch(type_instance="tx_packets_{0}".format(interface), values=[tx_packets])
-                                    values.dispatch(type_instance="rx_packets_{0}".format(interface), values=[rx_packets])
-                                    values.dispatch(type_instance="tx_errors_{0}".format(interface), values=[tx_errors])
-                                    values.dispatch(type_instance="rx_errors_{0}".format(interface), values=[rx_errors])
+                                values = collectd.Values(plugin_instance=lxc_fullname,
+                                                         type="gauge", plugin="lxc_net")
+                                values.dispatch(type_instance="tx_bytes_{0}".format(interface), values=[tx_bytes])
+                                values.dispatch(type_instance="rx_bytes_{0}".format(interface), values=[rx_bytes])
+                                values.dispatch(type_instance="tx_packets_{0}".format(interface), values=[tx_packets])
+                                values.dispatch(type_instance="rx_packets_{0}".format(interface), values=[rx_packets])
+                                values.dispatch(type_instance="tx_errors_{0}".format(interface), values=[tx_errors])
+                                values.dispatch(type_instance="rx_errors_{0}".format(interface), values=[rx_errors])
                 ### End Network
 
 
