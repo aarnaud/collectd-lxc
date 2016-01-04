@@ -8,7 +8,7 @@
 
 ## Installation
 
-* sudo pip install nsenter
+* sudo pip install -r requirements.txt --upgrade
 * copy "collectd_lxc.py" in a directory (exemple: `/etc/collectd/plugins/`)
 * Configure collectd, create file `/etc/collectd/collectd.conf.d/lxc.conf` with content
 

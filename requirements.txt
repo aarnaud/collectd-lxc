@@ -1,0 +1,2 @@
+#sudo pip2 install -r requirements.txt --upgrade
+nsenter
