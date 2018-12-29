@@ -111,8 +111,9 @@ def reader(input_data=None):
                 ### End DISK
 
                 ### Network
+                if metric == "pids":
                     #PID lxc: cat /sys/fs/cgroup/devices/lxc/CONTAINER-NAME/tasks | head -n 1
-                    with open(os.path.join(metrics[user_id][container_name][metric], 'init.scope/tasks'), 'r') as f:
+                    with open(os.path.join(metrics[user_id][container_name][metric], 'tasks'), 'r') as f:
                         # The first line is PID of container
                         container_PID = f.readline().rstrip()
                         with Namespace(container_PID, 'net'):
